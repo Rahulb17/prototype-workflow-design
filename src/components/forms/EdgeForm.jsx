@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useWorkflow } from "../../context/WorkflowContext";
 
 const EDGE_TYPES = [
@@ -10,11 +10,12 @@ const EDGE_TYPES = [
 
 const EdgeForm = () => {
   const { selectedEdge, updateEdge, deleteEdge } = useWorkflow();
-  const [local, setLocal] = useState(null);
+  const [local, setLocal] = useState(selectedEdge ? { ...selectedEdge } : null);
 
-  useEffect(() => {
-    setLocal(selectedEdge ? { ...selectedEdge } : null);
-  }, [selectedEdge]);
+  // Sync local state with selectedEdge changes
+  if (selectedEdge && local?.id !== selectedEdge.id) {
+    setLocal({ ...selectedEdge });
+  }
 
   if (!local) return <div className="panel">Select an edge to edit</div>;
 

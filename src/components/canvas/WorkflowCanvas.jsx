@@ -1,12 +1,13 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
+// add these imports
 import {
   ReactFlow,
   Background,
   Controls,
   addEdge,
-  useNodesState,
-  useEdgesState,
   MarkerType,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from "@xyflow/react";
 
 import { useWorkflow } from "../../context/WorkflowContext";
@@ -17,31 +18,47 @@ const WorkflowCanvas = () => {
   const [rfInstance, setRfInstance] = useState(null);
 
   const {
-    nodes: ctxNodes,
-    setNodes: setCtxNodes,
-    edges: ctxEdges,
-    setEdges: setCtxEdges,
+    nodes,
+    setNodes,
+    edges,
+    setEdges,
     setSelectedNode,
     setSelectedEdge,
   } = useWorkflow();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(ctxNodes || []);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(ctxEdges || []);
+  /** -------------------------
+   *  REACT FLOW CONTROLLED MODE
+   *  ------------------------- */
 
-  // sync local -> context
-  useEffect(() => setCtxNodes(nodes), [nodes, setCtxNodes]);
-  useEffect(() => setCtxEdges(edges), [edges, setCtxEdges]);
+  // REPLACE current onNodesChange with this:
+  const onNodesChange = useCallback(
+    (changes) => {
+      // applyNodeChanges knows how to handle move/select/remove/etc change objects from React Flow
+      setNodes((nds) => {
+        const next = applyNodeChanges(changes, nds);
+        return next;
+      });
+    },
+    [setNodes]
+  );
 
-  const onInit = useCallback((instance) => {
-    setRfInstance(instance);
-  }, []);
+  // REPLACE current onEdgesChange with this:
+  const onEdgesChange = useCallback(
+    (changes) => {
+      setEdges((eds) => {
+        const next = applyEdgeChanges(changes, eds);
+        return next;
+      });
+    },
+    [setEdges]
+  );
+
 
   const onConnect = useCallback(
     (connection) => {
-      // default to smoothstep with arrow
       const newEdge = {
         ...connection,
-        id: `e${connection.source}-${connection.target}-${Date.now()}`,
+        id: `e-${connection.source}-${connection.target}-${Date.now()}`,
         type: "smoothstep",
         markerEnd: { type: MarkerType.ArrowClosed },
       };
@@ -50,107 +67,87 @@ const WorkflowCanvas = () => {
     [setEdges]
   );
 
-  const onNodeClick = useCallback((_, node) => {
+  const onNodeClick = (_, node) => {
     setSelectedEdge(null);
     setSelectedNode(node);
-  }, [setSelectedNode, setSelectedEdge]);
+  };
 
-  const onEdgeClick = useCallback((_, edge) => {
-    // edge is the edge object
+  const onEdgeClick = (_, edge) => {
+    setSelectedNode(null);
     setSelectedEdge(edge);
-  }, [setSelectedEdge]);
+  };
 
-  const onSelectionChange = useCallback(({ nodes: selNodes = [], edges: selEdges = [] }) => {
-    // if nothing selected, clear both
-    if (selNodes.length === 0 && selEdges.length === 0) {
+  const onSelectionChange = ({ nodes: selN = [], edges: selE = [] }) => {
+    if (selN.length === 0 && selE.length === 0) {
       setSelectedNode(null);
       setSelectedEdge(null);
     }
-  }, [setSelectedNode, setSelectedEdge]);
+  };
 
-  const onDragOver = useCallback((event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
-
-  // drop handler (kept same as before; see earlier version)
+  /** -------------------------
+   *  DRAG + DROP
+   *  ------------------------- */
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
+
       const type =
         event.dataTransfer.getData("application/reactflow") ||
         event.dataTransfer.getData("text/plain");
+
       if (!type) return;
-      const wrapperBounds = wrapperRef.current?.getBoundingClientRect();
-      if (!wrapperBounds) return;
-      const clientX = event.clientX - wrapperBounds.left;
-      const clientY = event.clientY - wrapperBounds.top;
-      let position = { x: clientX, y: clientY };
+
+      const bounds = wrapperRef.current.getBoundingClientRect();
+
+      const x = event.clientX - bounds.left;
+      const y = event.clientY - bounds.top;
+
+      let position = { x, y };
+
       try {
-        if (rfInstance && typeof rfInstance.project === "function") {
-          position = rfInstance.project({ x: clientX, y: clientY });
-        } else if (rfInstance && typeof rfInstance.screenToFlowPosition === "function") {
-          position = rfInstance.screenToFlowPosition({ x: clientX, y: clientY });
-        } else {
-          const vp = rfInstance && rfInstance.getViewport ? rfInstance.getViewport() : null;
-          if (vp) {
-            const { x: vx = 0, y: vy = 0, zoom = 1 } = vp;
-            position = { x: (clientX - vx) / zoom, y: (clientY - vy) / zoom };
-          }
+        if (rfInstance?.project) {
+          position = rfInstance.project({ x, y });
+        } else if (rfInstance?.screenToFlowPosition) {
+          position = rfInstance.screenToFlowPosition({ x, y });
         }
-      } catch (err) {
-        // fallback to client coords
-      }
+      } catch {}
 
       const id = `${type}-${Date.now()}`;
 
       const defaultData = {
         start: { title: "Start" },
         task: { title: "New Task", description: "" },
-        approval: { title: "Approval", role: "Manager" },
-        automated: { title: "Automation", action: "" },
+        approval: { title: "Approval", role: "" },
+        automated: { title: "Automation", action: "", params: {} },
         end: { title: "End", message: "" },
-      }[type] || { title: type };
+      }[type];
 
       const newNode = { id, type, position, data: defaultData };
+
       setNodes((nds) => nds.concat(newNode));
     },
     [rfInstance, setNodes]
   );
 
-  // handle deletes (syncs)
-  const onNodesDelete = useCallback((deleted) => {
-    const ids = deleted.map((n) => n.id);
-    setNodes((nds) => nds.filter((n) => !ids.includes(n.id)));
-  }, [setNodes]);
-
-  const onEdgesDelete = useCallback((deleted) => {
-    const ids = deleted.map((e) => e.id);
-    setEdges((eds) => eds.filter((e) => !ids.includes(e.id)));
-  }, [setEdges]);
-
   return (
     <div
       ref={wrapperRef}
-      style={{ width: "100%", height: "100%", position: "relative", zIndex: 1 }}
-      onDragOver={onDragOver}
+      style={{ width: "100%", height: "100%" }}
+      onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        onInit={onInit}
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
         onSelectionChange={onSelectionChange}
-        onNodesDelete={onNodesDelete}
-        onEdgesDelete={onEdgesDelete}
+        onInit={setRfInstance}
         fitView
-        style={{ width: "100%", height: "100%" }}
       >
         <Background />
         <Controls />

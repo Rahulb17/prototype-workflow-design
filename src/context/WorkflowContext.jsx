@@ -10,13 +10,49 @@ export const WorkflowProvider = ({ children }) => {
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
 
+  /**
+   * updateNode:
+   * - produce next nodes array using functional updater
+   * - capture the updated node reference in a local variable
+   * - schedule setSelectedNode(updatedNode) *after* the updater finishes using queueMicrotask
+   *   (this avoids calling setState on the provider while a child component is rendering)
+   */
   const updateNode = (id, newData) => {
-    setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...newData } } : n)));
+    let updatedNode = null;
+
+    setNodes((nds) => {
+      const next = nds.map((n) => {
+        if (n.id !== id) return n;
+
+        // merge shallow + nested objects sensibly
+        const mergedData = { ...(n.data || {}), ...(newData || {}) };
+
+        if (n.data && typeof n.data === "object") {
+          Object.keys(n.data).forEach((k) => {
+            if (typeof n.data[k] === "object" && mergedData[k] && typeof mergedData[k] === "object") {
+              mergedData[k] = { ...n.data[k], ...mergedData[k] };
+            }
+          });
+        }
+
+        updatedNode = { ...n, data: mergedData };
+        return updatedNode;
+      });
+
+      return next;
+    });
+
+    // Defer selectedNode update to avoid "setState during render" errors.
+    // queueMicrotask runs before the next repaint but after current stack completes.
+    if (updatedNode) {
+      queueMicrotask(() => {
+        setSelectedNode(updatedNode);
+      });
+    }
   };
 
   const updateEdge = (edgeId, patch) => {
     setEdges((eds) => eds.map((e) => (e.id === edgeId ? { ...e, ...patch } : e)));
-    // if the edge being edited is currently selectedEdge, update that too
     setSelectedEdge((se) => (se && se.id === edgeId ? { ...se, ...patch } : se));
   };
 

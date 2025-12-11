@@ -5,7 +5,8 @@ import { getAutomations } from "../../../api/automations";
 const AutomatedForm = ({ node }) => {
   const { updateNode } = useWorkflow();
   const [actions, setActions] = useState([]);
-  const [selected, setSelected] = useState(node.data.action || "");
+  const [selectedAction, setSelectedAction] = useState(node?.data?.action || "");
+  const [params, setParams] = useState(node?.data?.params || {});
 
   useEffect(() => {
     (async () => {
@@ -14,40 +15,45 @@ const AutomatedForm = ({ node }) => {
     })();
   }, []);
 
+  // sync when node selection changes
   useEffect(() => {
-    // ensure node data has params container
-    if (!node.data.params) updateNode(node.id, { params: {} });
-  }, [node, updateNode]);
+    setSelectedAction(node?.data?.action || "");
+    setParams(node?.data?.params || {});
+  }, [node?.id]);
 
-  const onChoose = (actionId) => {
-    setSelected(actionId);
-    const action = actions.find(a => a.id === actionId);
-    // initialize params keys to empty strings
-    const paramsObj = (action?.params || []).reduce((acc, p) => ({ ...acc, [p]: node.data.params?.[p] || "" }), {});
-    updateNode(node.id, { action: actionId, params: paramsObj });
+  const chooseAction = (actionId) => {
+    setSelectedAction(actionId);
+    const actionDef = actions.find((a) => a.id === actionId);
+    const initParams = (actionDef?.params || []).reduce((acc, p) => ({ ...acc, [p]: params[p] || "" }), {});
+    setParams(initParams);
+    updateNode(node.id, { action: actionId, params: initParams });
   };
 
-  const onParamChange = (key, value) => {
-    updateNode(node.id, { params: { ...(node.data.params || {}), [key]: value } });
+  const setParam = (k, v) => {
+    setParams((p) => {
+      const next = { ...p, [k]: v };
+      updateNode(node.id, { params: next });
+      return next;
+    });
   };
 
   return (
     <div>
       <label>Title</label>
-      <input value={node.data.title || ""} onChange={(e) => updateNode(node.id, { title: e.target.value })} />
+      <input value={node?.data?.title || ""} onChange={(e) => updateNode(node.id, { title: e.target.value })} />
 
       <label>Action</label>
-      <select value={selected} onChange={(e) => onChoose(e.target.value)}>
-        <option value="">-- choose action --</option>
-        {actions.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+      <select value={selectedAction} onChange={(e) => chooseAction(e.target.value)}>
+        <option value="">-- choose --</option>
+        {actions.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
       </select>
 
-      {selected && (() => {
-        const action = actions.find(a => a.id === selected);
-        return (action?.params || []).map((p) => (
+      {selectedAction && (() => {
+        const actionDef = actions.find((a) => a.id === selectedAction);
+        return (actionDef?.params || []).map((p) => (
           <div key={p}>
             <label>{p}</label>
-            <input value={(node.data.params || {})[p] || ""} onChange={(e) => onParamChange(p, e.target.value)} />
+            <input value={params[p] || ""} onChange={(e) => setParam(p, e.target.value)} />
           </div>
         ));
       })()}
