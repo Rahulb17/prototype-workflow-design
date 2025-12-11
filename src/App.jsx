@@ -1,3 +1,4 @@
+import React from "react";
 import Sidebar from "./components/canvas/Sidebar";
 import WorkflowCanvas from "./components/canvas/WorkflowCanvas";
 import NodeFormPanel from "./components/forms/NodeFormPanel";
@@ -8,7 +9,9 @@ function App() {
     <WorkflowProvider>
       <div className="layout">
         <Sidebar />
-        <WorkflowCanvas />
+        <div style={{ width: "100%", height: "100vh" }}>
+          <WorkflowCanvas />
+        </div>
         <NodeFormPanel />
       </div>
     </WorkflowProvider>

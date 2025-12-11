@@ -150,3 +150,42 @@ body, html, #root {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+
+
+/* make sure canvas wrapper is on top of any overlays */
+.layout > .react-flow {
+  z-index: 1;
+}
+
+/* ensure panels don't intercept pointer events unexpectedly */
+.sidebar, .panel {
+  z-index: 2;
+}
+
+/* ensure draggable is obvious and not selectable while dragging */
+.draggable {
+  user-select: none;
+  -webkit-user-drag: element;
+}
+
+/* if you have any overlay/backdrop, ensure it doesn't block the canvas during drag */
+.overlay-blocker {
+  pointer-events: none; /* allow drops through it; set to auto only when actively needed */
+}
+
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #777;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.panel input[type="color"] {
+  padding: 4px;
+  height: 34px;
+  border: none;
+  background: transparent;
+}
