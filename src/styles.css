@@ -1,179 +1,197 @@
-/* ------------------------------
-   GLOBAL LAYOUT
---------------------------------*/
+/* ==============================
+   Workflow Designer — styles.css
+   Clean, modular, and documented
+   ============================== */
 
-body, html, #root {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: "Inter", sans-serif;
+/* ------------------------------
+   Theme variables
+--------------------------------*/
+:root{
+  --bg-app: #f8fafc;
+  --panel-bg: #fafafa;
+  --muted-border: #d9d9d9;
+  --muted: #cfcfcf;
+  --accent-blue: #6b8cff;
+  --accent-green: #46c96f;
+  --accent-yellow: #ffb234;
+  --accent-red: #ff5a5a;
+  --accent-teal: #37a7d4;
+  --card-bg: #ffffff;
+  --text: #222;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --gap: 12px;
+  --padding: 20px;
+  --transition-fast: 180ms ease;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
+/* ------------------------------
+   Global
+--------------------------------*/
+* { box-sizing: border-box; }
+html,body,#root {
+  height: 100%;
+  margin: 0;
+  background: var(--bg-app);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------
+   Layout (3-column)
+--------------------------------*/
 .layout {
   display: grid;
-  grid-template-columns: 240px 1fr 300px;
+  grid-template-columns: 240px 1fr 320px;
   height: 100vh;
+  gap: 0;
+  align-items: stretch;
+}
+
+/* Responsive: collapse right panel on narrow screens */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 220px 1fr; }
+  .panel { display: none; } /* optional: show with a toggle in future */
 }
 
 /* ------------------------------
-   SIDEBAR
+   Sidebar (left)
 --------------------------------*/
-
 .sidebar {
-  background: #f5f7fa;
-  padding: 20px;
-  border-right: 1px solid #d9d9d9;
-}
-
-.sidebar h3 {
-  margin-top: 0;
-}
-
-.sidebar div {
-  background: #ffffff;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  cursor: grab;
-  transition: 0.2s ease;
-  border: 1px solid #dcdcdc;
-}
-
-.sidebar div:hover {
-  background: #eef5ff;
-  border-color: #99baff;
-}
-
-/* ------------------------------
-   RIGHT PANEL (Node Form Panel)
---------------------------------*/
-
-.panel {
-  background: #fafafa;
-  padding: 20px;
-  border-left: 1px solid #d9d9d9;
+  background: var(--panel-bg);
+  padding: var(--padding);
+  border-right: 1px solid var(--muted-border);
   overflow-y: auto;
 }
 
+.sidebar h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.05rem;
+}
+
+.sidebar .draggable {
+  background: var(--card-bg);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  cursor: grab;
+  border: 1px solid #e6e6e6;
+  transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  user-select: none;
+}
+.sidebar .draggable:active { cursor: grabbing; transform: translateY(1px); }
+.sidebar .draggable:hover {
+  background: #f1f8ff;
+  box-shadow: 0 6px 16px rgba(30,70,200,0.06);
+}
+
+/* ------------------------------
+   Right panel (forms)
+--------------------------------*/
+.panel {
+  background: var(--panel-bg);
+  padding: var(--padding);
+  border-left: 1px solid var(--muted-border);
+  overflow-y: auto;
+  min-width: 260px;
+}
+
+/* panel header */
 .panel h3 {
-  margin: 0 0 15px 0;
+  margin: 0 0 14px 0;
+  font-size: 1.05rem;
 }
 
+/* form labels & inputs */
 .panel label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 4px;
   display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.88rem;
 }
 
-.panel input,
-.panel select {
+.panel input[type="text"],
+.panel input[type="date"],
+.panel input[type="number"],
+.panel input[type="color"],
+.panel select,
+.panel textarea {
   width: 100%;
-  padding: 8px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  border: 1px solid #cfcfcf;
-  background: #ffffff;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--muted);
+  background: var(--card-bg);
+  font-size: 0.95rem;
+  color: var(--text);
 }
 
-/* ------------------------------
-   NODE BASE STYLING
---------------------------------*/
+/* smaller inputs inline */
+.field-row { display:flex; gap:8px; align-items:center; }
+.field-row .small { flex: 0 0 120px; }
 
-.node {
-  padding: 12px 16px;
-  border-radius: 10px;
-  color: #333;
-  border: 2px solid transparent;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  font-size: 0.9rem;
-  width: 150px;
+/* checkbox inline group */
+.inline-checkbox {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.inline-checkbox input[type="checkbox"] {
+  width: 18px; height: 18px;
 }
 
-/* ------------------------------
-   NODE TYPE COLORS
---------------------------------*/
+/* textarea sizing */
+.panel textarea { min-height: 90px; resize: vertical; }
 
-.start-node {
-  background: #e6f9ec;
-  border-color: #46c96f;
-}
-
-.task-node {
-  background: #eef3ff;
-  border-color: #6b8cff;
-}
-
-.approval-node {
-  background: #fff6e5;
-  border-color: #ffb234;
-}
-
-.automated-node {
-  background: #e9f7ff;
-  border-color: #37a7d4;
-}
-
-.end-node {
-  background: #ffe8e8;
-  border-color: #ff5a5a;
-}
-
-/* ------------------------------
-   FIX XYFLOW NODE START PORTS
---------------------------------*/
-
-.react-flow__node {
+/* buttons in panel */
+.panel button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
   cursor: pointer;
 }
+.panel button:hover { box-shadow: 0 6px 14px rgba(20,40,80,0.06); }
 
 /* ------------------------------
-   SCROLLBAR CLEANUP
+   Node card base styles
 --------------------------------*/
-
-.panel::-webkit-scrollbar,
-.sidebar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.panel::-webkit-scrollbar-thumb,
-.sidebar::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
-}
-
 .node {
-  transition: 0.2s ease;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  color: var(--text);
+  border: 2px solid transparent;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  font-size: 0.92rem;
+  width: 170px;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
-
 .node:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(15,30,60,0.08);
 }
 
+/* Node type colors */
+.start-node   { background: #e6f9ec; border-color: var(--accent-green); }
+.task-node    { background: #eef3ff; border-color: var(--accent-blue); }
+.approval-node{ background: #fff6e5; border-color: var(--accent-yellow); }
+.automated-node { background: #e9f7ff; border-color: var(--accent-teal); }
+.end-node     { background: #ffe8e8; border-color: var(--accent-red); }
 
-/* make sure canvas wrapper is on top of any overlays */
-.layout > .react-flow {
-  z-index: 1;
-}
+/* node small meta text */
+.node small { display:block; margin-top:6px; color: #555; font-size:0.82rem; }
 
-/* ensure panels don't intercept pointer events unexpectedly */
-.sidebar, .panel {
-  z-index: 2;
-}
+/* ------------------------------
+   React Flow specific tweaks
+--------------------------------*/
+/* ensure canvas wrapper sits below panels but above any accidental overlays */
+.react-flow { z-index: 1; }
 
-/* ensure draggable is obvious and not selectable while dragging */
-.draggable {
-  user-select: none;
-  -webkit-user-drag: element;
-}
-
-/* if you have any overlay/backdrop, ensure it doesn't block the canvas during drag */
-.overlay-blocker {
-  pointer-events: none; /* allow drops through it; set to auto only when actively needed */
-}
-
-
+/* node handles */
 .react-flow__handle {
   width: 10px;
   height: 10px;
@@ -183,6 +201,38 @@ body, html, #root {
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
+/* edge label visibility tweak (if using labels) */
+.react-flow__edge-text { font-size: 12px; color: #333; }
+
+/* prevent panels intercepting pointer events when intentionally overlayed */
+.sidebar, .panel { z-index: 2; }
+
+/* minimal scrollbar styles */
+.sidebar::-webkit-scrollbar,
+.panel::-webkit-scrollbar {
+  width: 8px;
+}
+.sidebar::-webkit-scrollbar-thumb,
+.panel::-webkit-scrollbar-thumb {
+  background: #cfcfcf;
+  border-radius: 6px;
+}
+
+/* ------------------------------
+   Utility classes
+--------------------------------*/
+.flex { display:flex; }
+.center { display:flex; align-items:center; justify-content:center; }
+.mt-sm { margin-top:8px; }
+.mb-sm { margin-bottom:8px; }
+
+/* small helper for inline key/value pairs in forms */
+.kv-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.kv-row input { flex: 1; }
+
+/* ------------------------------
+   Minor fixes for form visuals
+--------------------------------*/
 .panel input[type="color"] {
   padding: 4px;
   height: 34px;
@@ -190,22 +240,15 @@ body, html, #root {
   background: transparent;
 }
 
+/* ensure checkboxes and labels align */
+.panel label[for] { cursor: pointer; }
 
-.panel input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-}
+/* ensure draggable element not selectable during drag */
+.draggable { -webkit-user-drag: element; user-select: none; }
 
-.panel label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
+/* overlay blocker helper (use pointer-events:auto only when needed) */
+.overlay-blocker { pointer-events: none; }
 
-.panel textarea {
-  width: 100%;
-  min-height: 80px;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
+/* ==============================
+   End of styles.css
+   ============================== */
